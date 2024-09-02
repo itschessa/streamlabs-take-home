@@ -1,12 +1,13 @@
+import { ImageSource } from "./types";
 import useCanvasDrag from "./useCanvasDrag";
 
 function App() {
-  const imageSources = [
+  const imageSources: ImageSource[] = [
     { id: "turtle", src: "./turtle.svg" },
     { id: "frog", src: "./frog.svg" },
   ];
 
-  const { canvasRef } = useCanvasDrag(imageSources);
+  const canvasRef = useCanvasDrag(imageSources);
 
   return <canvas ref={canvasRef} />;
 }

@@ -1,21 +1,17 @@
 import { SCALE_FACTOR } from "./constants";
-import { Position } from "./types";
+import { CanvasImage, Position } from "./types";
 
 /**
  * Checks if a given point (x, y) is within the bounds of the given image,
  * taking into account its position and scaled size.
  *
- * @param {Position} pos The position of the image.
- * @param {HTMLImageElement} img The image element.
- * @param {number} x The x-coordinate of the point to check.
- * @param {number} y The y-coordinate of the point to check.
+ * @param {CanvasImage} image The image to check against.
+ * @param {Position} point The point to check.
  * @returns {boolean} Whether the point is within the bounds of the image.
  */
 const isPointInImage = (
-  pos: Position,
-  img: HTMLImageElement,
-  x: number,
-  y: number
+  { pos, img }: CanvasImage,
+  { x, y }: Position
 ): boolean => {
   return (
     x >= pos.x &&

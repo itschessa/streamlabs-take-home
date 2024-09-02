@@ -8,41 +8,67 @@ import {
   getMousePosition,
 } from "./helpers";
 
+/**
+ * A custom React hook for implementing drag-and-drop functionality on a canvas.
+ * This hook manages the canvas setup, image loading, and drag interactions for multiple images.
+ *
+ * @param {ImageSource[]} imageSources - An array of image sources to be loaded and rendered on the canvas.
+ * @returns {React.RefObject<HTMLCanvasElement>} A ref object for the canvas element.
+ *
+ * @example
+ * const imageSources = [
+ *   { id: "image1", src: "./image1.png" },
+ *   { id: "image2", src: "./image2.png" }
+ * ];
+ * const canvasRef = useCanvasDrag(imageSources);
+ *
+ * // In your component's JSX:
+ * <canvas ref={canvasRef} />
+ */
 function useCanvasDrag(imageSources: ImageSource[]) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const draggingRef = useRef<string | null>(null);
   const offsetRef = useRef<Position>({ x: 0, y: 0 });
   const canvasImagesRef = useRef<CanvasImage[]>([]);
 
-  const setupCanvas = useCallback(() => {
+  const getCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.height = window.innerHeight;
-    canvas.width = canvas.height * ASPECT_RATIO;
+    if (!canvas) {
+      throw new Error("Canvas is not available");
+    }
+    return canvas;
   }, []);
 
+  const setupCanvas = useCallback(() => {
+    const canvas = getCanvas();
+    canvas.height = window.innerHeight;
+    canvas.width = canvas.height * ASPECT_RATIO;
+  }, [getCanvas]);
+
   const loadImages = useCallback(async () => {
+    const canvas = getCanvas();
     const newCanvasImages: CanvasImage[] = [];
 
     for (const { id, src } of imageSources) {
       const img = new Image();
       img.src = src;
       await new Promise((resolve) => (img.onload = resolve));
-      const pos = getRandomPosition(img, canvasRef.current!);
+      const pos = getRandomPosition(img, canvas);
       newCanvasImages.push({ id, img, pos });
     }
 
     canvasImagesRef.current = newCanvasImages;
-  }, [imageSources]);
+  }, [imageSources, getCanvas]);
 
   const drawImages = useCallback(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
+    const canvas = getCanvas();
+    const context = canvas.getContext("2d");
+    if (!context) return;
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     canvasImagesRef.current.forEach(({ id, img, pos }) => {
+      // highlight the image being dragged
       if (draggingRef.current === id) {
         context.strokeStyle = "green";
         context.lineWidth = 2;
@@ -62,60 +88,54 @@ function useCanvasDrag(imageSources: ImageSource[]) {
         img.height * SCALE_FACTOR
       );
     });
-  }, []);
+  }, [getCanvas]);
 
   const handleDragStart = useCallback(
     (e: MouseEvent) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+      const canvas = getCanvas();
+      const mousePosition = getMousePosition(e, canvas);
 
-      const { x, y } = getMousePosition(e, canvas);
-
-      for (const { id, img, pos } of canvasImagesRef.current) {
-        if (isPointInImage(pos, img, x, y)) {
-          draggingRef.current = id;
-          offsetRef.current = { x: x - pos.x, y: y - pos.y };
+      for (const image of canvasImagesRef.current) {
+        if (isPointInImage(image, mousePosition)) {
+          draggingRef.current = image.id;
+          offsetRef.current = {
+            x: mousePosition.x - image.pos.x,
+            y: mousePosition.y - image.pos.y,
+          };
           break;
         }
       }
 
       drawImages();
     },
-    [drawImages]
+    [drawImages, getCanvas]
   );
 
   const handleDragging = useCallback(
     (e: MouseEvent) => {
       if (!draggingRef.current) return;
 
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const { x, y } = getMousePosition(e, canvas);
       const draggedImage = canvasImagesRef.current.find(
         (img) => img.id === draggingRef.current
       );
 
-      if (draggedImage) {
-        const newX = x - offsetRef.current.x;
-        const newY = y - offsetRef.current.y;
-        draggedImage.pos = {
-          x: clamp(
-            newX,
-            0,
-            canvas.width - draggedImage.img.width * SCALE_FACTOR
-          ),
-          y: clamp(
-            newY,
-            0,
-            canvas.height - draggedImage.img.height * SCALE_FACTOR
-          ),
-        };
-      }
+      if (!draggedImage) return;
+
+      const canvas = getCanvas();
+      const { x, y } = getMousePosition(e, canvas);
+      const newX = x - offsetRef.current.x;
+      const newY = y - offsetRef.current.y;
+      const maxX = canvas.width - draggedImage.img.width * SCALE_FACTOR;
+      const maxY = canvas.height - draggedImage.img.height * SCALE_FACTOR;
+
+      draggedImage.pos = {
+        x: clamp(newX, 0, maxX),
+        y: clamp(newY, 0, maxY),
+      };
 
       drawImages();
     },
-    [drawImages]
+    [drawImages, getCanvas]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -124,9 +144,6 @@ function useCanvasDrag(imageSources: ImageSource[]) {
   }, [drawImages]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
     const init = async () => {
       setupCanvas();
       await loadImages();
@@ -135,6 +152,7 @@ function useCanvasDrag(imageSources: ImageSource[]) {
 
     init();
 
+    const canvas = getCanvas();
     canvas.addEventListener("mousedown", handleDragStart);
     canvas.addEventListener("mousemove", handleDragging);
     canvas.addEventListener("mouseup", handleDragEnd);
@@ -154,9 +172,10 @@ function useCanvasDrag(imageSources: ImageSource[]) {
     handleDragStart,
     handleDragging,
     handleDragEnd,
+    getCanvas,
   ]);
 
-  return { canvasRef };
+  return canvasRef;
 }
 
 export default useCanvasDrag;
