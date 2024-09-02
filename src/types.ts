@@ -7,6 +7,7 @@ interface CanvasImage {
   id: string;
   img: HTMLImageElement;
   pos: Position;
+  zIndex: number;
 }
 
 interface ImageSource {

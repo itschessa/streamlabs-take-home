@@ -6,6 +6,8 @@ import {
   clamp,
   getRandomPosition,
   getMousePosition,
+  sortImagesByZIndex,
+  resetZIndexes,
 } from "./helpers";
 
 /**
@@ -48,13 +50,14 @@ function useCanvasDrag(imageSources: ImageSource[]) {
   const loadImages = useCallback(async () => {
     const canvas = getCanvas();
     const newCanvasImages: CanvasImage[] = [];
+    let zIndex = 0;
 
     for (const { id, src } of imageSources) {
       const img = new Image();
       img.src = src;
       await new Promise((resolve) => (img.onload = resolve));
       const pos = getRandomPosition(img, canvas);
-      newCanvasImages.push({ id, img, pos });
+      newCanvasImages.push({ id, img, pos, zIndex: zIndex++ });
     }
 
     canvasImagesRef.current = newCanvasImages;
@@ -66,7 +69,7 @@ function useCanvasDrag(imageSources: ImageSource[]) {
     if (!context) return;
 
     context.clearRect(0, 0, canvas.width, canvas.height);
-
+    
     for (const { id, img, pos } of canvasImagesRef.current) {
       // highlight the image being dragged
       if (draggingRef.current === id) {
@@ -94,19 +97,25 @@ function useCanvasDrag(imageSources: ImageSource[]) {
     (e: MouseEvent) => {
       const canvas = getCanvas();
       const mousePosition = getMousePosition(e, canvas);
+      const sortedImages = sortImagesByZIndex(canvasImagesRef.current, false);
 
-      for (const image of canvasImagesRef.current) {
+      for (const image of sortedImages) {
         if (isPointInImage(image, mousePosition)) {
           draggingRef.current = image.id;
           offsetRef.current = {
             x: mousePosition.x - image.pos.x,
             y: mousePosition.y - image.pos.y,
           };
+          // Reset z-indexes, ensuring the dragged image is on top
+          canvasImagesRef.current = resetZIndexes(
+            canvasImagesRef.current,
+            image.id
+          );
+
+          drawImages();
           break;
         }
       }
-
-      drawImages();
     },
     [drawImages, getCanvas]
   );

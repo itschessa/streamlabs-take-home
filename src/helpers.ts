@@ -72,4 +72,45 @@ const getMousePosition = (
   return { x, y };
 };
 
-export { isPointInImage, clamp, getRandomPosition, getMousePosition };
+/**
+ * Sorts an array of CanvasImage objects by their zIndex.
+ *
+ * @param {CanvasImage[]} images The array of images to sort.
+ * @param {boolean} ascending Whether to sort in ascending order (true) or descending order (false).
+ * @returns {CanvasImage[]} A new sorted array of CanvasImage objects.
+ */
+const sortImagesByZIndex = (
+  images: CanvasImage[],
+  ascending: boolean = true
+): CanvasImage[] => {
+  return [...images].sort((a, b) =>
+    ascending ? a.zIndex - b.zIndex : b.zIndex - a.zIndex
+  );
+};
+
+/**
+ * Resets z-indexes of images, ensuring the specified image is on top.
+ *
+ * @param {CanvasImage[]} images The array of images to reset.
+ * @param {string} topImageId The ID of the image that should be on top.
+ * @returns {CanvasImage[]} The array with reset z-indexes.
+ */
+const resetZIndexes = (
+  images: CanvasImage[],
+  topImageId: string
+): CanvasImage[] => {
+  return images
+    .sort((a, b) =>
+      a.id === topImageId ? 1 : b.id === topImageId ? -1 : a.zIndex - b.zIndex
+    )
+    .map((img, index) => ({ ...img, zIndex: index }));
+};
+
+export {
+  isPointInImage,
+  clamp,
+  getRandomPosition,
+  getMousePosition,
+  sortImagesByZIndex,
+  resetZIndexes,
+};
