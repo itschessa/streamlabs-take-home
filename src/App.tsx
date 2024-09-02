@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { StyledCanvas } from "./App.styles";
 
 interface Position {
   x: number;
@@ -168,7 +167,7 @@ function App() {
     draw();
   }, []);
 
-  return <StyledCanvas id="canvas" />;
+  return <canvas id="canvas" />;
 }
 
 export default App;
