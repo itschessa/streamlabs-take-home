@@ -33,6 +33,28 @@ function App() {
 
       const drawImages = () => {
         context.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (dragging === "cat") {
+          context.strokeStyle = "green";
+          context.lineWidth = 2;
+          context.strokeRect(
+            catPos.x - 1,
+            catPos.y - 1,
+            catImg.width * 0.15 + 2,
+            catImg.height * 0.15 + 2
+          );
+        }
+        if (dragging === "dog") {
+          context.strokeStyle = "green";
+          context.lineWidth = 2;
+          context.strokeRect(
+            dogPos.x - 1,
+            dogPos.y - 1,
+            dogImg.width * 0.15 + 2,
+            dogImg.height * 0.15 + 2
+          );
+        }
+
         context.drawImage(
           catImg,
           catPos.x,
@@ -81,6 +103,8 @@ function App() {
           offsetX = x - dogPos.x;
           offsetY = y - dogPos.y;
         }
+
+        drawImages();
       });
 
       canvas.addEventListener("mousemove", (e) => {
@@ -111,10 +135,12 @@ function App() {
 
       canvas.addEventListener("mouseup", () => {
         dragging = null;
+        drawImages();
       });
 
       canvas.addEventListener("mouseleave", () => {
         dragging = null;
+        drawImages();
       });
 
       drawImages();
