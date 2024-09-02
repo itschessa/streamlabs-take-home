@@ -1,9 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Position } from "./types";
 
 const SCALE_FACTOR = 0.15;
+const ASPECT_RATIO = 16 / 9;
 
 function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   useEffect(() => {
     const draw = async () => {
       const imageSources = [
@@ -23,14 +26,17 @@ function App() {
         )
       );
 
-      const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+      const canvas = canvasRef.current;
+      if (canvas === null) {
+        return;
+      }
       const context = canvas.getContext("2d");
       if (context === null) {
         return;
       }
 
       canvas.height = window.innerHeight;
-      canvas.width = canvas.height * (16 / 9);
+      canvas.width = canvas.height * ASPECT_RATIO;
 
       const getRandomPosition = (img: HTMLImageElement) => {
         const scaledWidth = img.width * SCALE_FACTOR;
@@ -160,7 +166,7 @@ function App() {
     draw();
   }, []);
 
-  return <canvas id="canvas" />;
+  return <canvas ref={canvasRef} />;
 }
 
 export default App;
