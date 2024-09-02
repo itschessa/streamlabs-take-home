@@ -9,4 +9,8 @@ interface CanvasImage {
   pos: Position;
 }
 
-export type { Position, CanvasImage };
+interface ImageSource {
+  id: string;
+  src: string;
+}
+export type { Position, CanvasImage, ImageSource };

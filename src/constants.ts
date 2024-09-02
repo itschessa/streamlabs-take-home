@@ -1,0 +1,4 @@
+const SCALE_FACTOR = 0.15;
+const ASPECT_RATIO = 16 / 9;
+
+export { SCALE_FACTOR, ASPECT_RATIO };
