@@ -67,7 +67,7 @@ function useCanvasDrag(imageSources: ImageSource[]) {
 
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    canvasImagesRef.current.forEach(({ id, img, pos }) => {
+    for (const { id, img, pos } of canvasImagesRef.current) {
       // highlight the image being dragged
       if (draggingRef.current === id) {
         context.strokeStyle = "green";
@@ -87,7 +87,7 @@ function useCanvasDrag(imageSources: ImageSource[]) {
         img.width * SCALE_FACTOR,
         img.height * SCALE_FACTOR
       );
-    });
+    }
   }, [getCanvas]);
 
   const handleDragStart = useCallback(
