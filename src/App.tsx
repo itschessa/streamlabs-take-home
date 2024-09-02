@@ -6,13 +6,15 @@ interface Position {
   y: number;
 }
 
+const SCALE_FACTOR = 0.15;
+
 function App() {
   useEffect(() => {
     const draw = async () => {
       const catImg = new Image();
       const dogImg = new Image();
-      catImg.src = "./cat.png";
-      dogImg.src = "./dog.png";
+      catImg.src = "./turtle.svg";
+      dogImg.src = "./frog.svg";
 
       await Promise.all([
         new Promise((resolve) => (catImg.onload = resolve)),
@@ -25,8 +27,19 @@ function App() {
         return;
       }
 
-      let catPos: Position = { x: 0, y: 0 };
-      let dogPos: Position = { x: 100, y: 100 };
+      canvas.height = window.innerHeight;
+      canvas.width = canvas.height * (16 / 9);
+
+      const getRandomPosition = (img: HTMLImageElement) => {
+        const scaledWidth = img.width * SCALE_FACTOR;
+        const scaledHeight = img.height * SCALE_FACTOR;
+        const x = Math.random() * (canvas.width - scaledWidth);
+        const y = Math.random() * (canvas.height - scaledHeight);
+        return { x, y };
+      };
+
+      let catPos: Position = getRandomPosition(catImg);
+      let dogPos: Position = getRandomPosition(dogImg);
       let dragging: "cat" | "dog" | null = null;
       let offsetX = 0;
       let offsetY = 0;
@@ -40,8 +53,8 @@ function App() {
           context.strokeRect(
             catPos.x - 1,
             catPos.y - 1,
-            catImg.width * 0.15 + 2,
-            catImg.height * 0.15 + 2
+            catImg.width * SCALE_FACTOR + 2,
+            catImg.height * SCALE_FACTOR + 2
           );
         }
         if (dragging === "dog") {
@@ -50,8 +63,8 @@ function App() {
           context.strokeRect(
             dogPos.x - 1,
             dogPos.y - 1,
-            dogImg.width * 0.15 + 2,
-            dogImg.height * 0.15 + 2
+            dogImg.width * SCALE_FACTOR + 2,
+            dogImg.height * SCALE_FACTOR + 2
           );
         }
 
@@ -59,15 +72,15 @@ function App() {
           catImg,
           catPos.x,
           catPos.y,
-          catImg.width * 0.15,
-          catImg.height * 0.15
+          catImg.width * SCALE_FACTOR,
+          catImg.height * SCALE_FACTOR
         );
         context.drawImage(
           dogImg,
           dogPos.x,
           dogPos.y,
-          dogImg.width * 0.15,
-          dogImg.height * 0.15
+          dogImg.width * SCALE_FACTOR,
+          dogImg.height * SCALE_FACTOR
         );
       };
 
@@ -79,9 +92,9 @@ function App() {
       ) => {
         return (
           x >= pos.x &&
-          x <= pos.x + img.width &&
+          x <= pos.x + img.width * SCALE_FACTOR &&
           y >= pos.y &&
-          y <= pos.y + img.height
+          y <= pos.y + img.height * SCALE_FACTOR
         );
       };
 
@@ -91,8 +104,12 @@ function App() {
 
       canvas.addEventListener("mousedown", (e) => {
         const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        console.log(`canvas upper -- ${rect.right}, ${rect.bottom}`);
 
         if (isPointInImage(catPos, catImg, x, y)) {
           dragging = "cat";
@@ -110,22 +127,24 @@ function App() {
       canvas.addEventListener("mousemove", (e) => {
         if (dragging) {
           const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          const x = (e.clientX - rect.left) * scaleX;
+          const y = (e.clientY - rect.top) * scaleY;
 
           if (dragging === "cat") {
             const newX = x - offsetX;
             const newY = y - offsetY;
             catPos = {
-              x: clamp(newX, 0, canvas.width - catImg.width * 0.15),
-              y: clamp(newY, 0, canvas.height - catImg.height * 0.15),
+              x: clamp(newX, 0, canvas.width - catImg.width * SCALE_FACTOR),
+              y: clamp(newY, 0, canvas.height - catImg.height * SCALE_FACTOR),
             };
           } else if (dragging === "dog") {
             const newX = x - offsetX;
             const newY = y - offsetY;
             dogPos = {
-              x: clamp(newX, 0, canvas.width - dogImg.width * 0.15),
-              y: clamp(newY, 0, canvas.height - dogImg.height * 0.15),
+              x: clamp(newX, 0, canvas.width - dogImg.width * SCALE_FACTOR),
+              y: clamp(newY, 0, canvas.height - dogImg.height * SCALE_FACTOR),
             };
           }
 
