@@ -93,12 +93,17 @@ function App() {
         return Math.max(min, Math.min(max, value));
       };
 
-      canvas.addEventListener("mousedown", (e) => {
+      const getMousePosition = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
+        return { x, y };
+      };
+
+      const handleDragStart = (e: MouseEvent) => {
+        const { x, y } = getMousePosition(e);
 
         for (const { id, img } of images) {
           const pos = imagePositions[id];
@@ -111,15 +116,11 @@ function App() {
         }
 
         drawImages();
-      });
+      };
 
-      canvas.addEventListener("mousemove", (e) => {
+      const handleDragging = (e: MouseEvent) => {
         if (dragging) {
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = canvas.width / rect.width;
-          const scaleY = canvas.height / rect.height;
-          const x = (e.clientX - rect.left) * scaleX;
-          const y = (e.clientY - rect.top) * scaleY;
+          const { x, y } = getMousePosition(e);
 
           const draggedImage = images.find((img) => img.id === dragging);
           if (draggedImage) {
@@ -141,17 +142,17 @@ function App() {
 
           drawImages();
         }
-      });
+      };
 
-      canvas.addEventListener("mouseup", () => {
+      const handleDragEnd = () => {
         dragging = null;
         drawImages();
-      });
+      };
 
-      canvas.addEventListener("mouseleave", () => {
-        dragging = null;
-        drawImages();
-      });
+      canvas.addEventListener("mousedown", handleDragStart);
+      canvas.addEventListener("mousemove", handleDragging);
+      canvas.addEventListener("mouseup", handleDragEnd);
+      canvas.addEventListener("mouseleave", handleDragEnd);
 
       drawImages();
     };
