@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
-import { CanvasImage, ImageSource, Position } from "./types";
+import { CanvasImage, ImageSource, Position, ImageHistory } from "./types";
 import { ASPECT_RATIO, SCALE_FACTOR } from "./constants";
 import {
   isPointInImage,
@@ -29,9 +29,11 @@ import {
  */
 function useCanvasDrag(imageSources: ImageSource[]) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const draggingRef = useRef<string | null>(null);
+  const draggingRef = useRef<ImageHistory | null>(null);
   const offsetRef = useRef<Position>({ x: 0, y: 0 });
   const canvasImagesRef = useRef<CanvasImage[]>([]);
+  const history = useRef<ImageHistory[]>([]);
+  const historyIndex = useRef<number>(0);
 
   const getCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -69,10 +71,10 @@ function useCanvasDrag(imageSources: ImageSource[]) {
     if (!context) return;
 
     context.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     for (const { id, img, pos } of canvasImagesRef.current) {
       // highlight the image being dragged
-      if (draggingRef.current === id) {
+      if (draggingRef.current?.id === id) {
         context.strokeStyle = "green";
         context.lineWidth = 2;
         context.strokeRect(
@@ -101,7 +103,9 @@ function useCanvasDrag(imageSources: ImageSource[]) {
 
       for (const image of sortedImages) {
         if (isPointInImage(image, mousePosition)) {
-          draggingRef.current = image.id;
+          const dragging = { id: image.id, pos: image.pos};
+          draggingRef.current = dragging;
+
           offsetRef.current = {
             x: mousePosition.x - image.pos.x,
             y: mousePosition.y - image.pos.y,
@@ -125,7 +129,7 @@ function useCanvasDrag(imageSources: ImageSource[]) {
       if (!draggingRef.current) return;
 
       const draggedImage = canvasImagesRef.current.find(
-        (img) => img.id === draggingRef.current
+        (img) => img.id === draggingRef.current?.id
       );
 
       if (!draggedImage) return;
@@ -148,9 +152,74 @@ function useCanvasDrag(imageSources: ImageSource[]) {
   );
 
   const handleDragEnd = useCallback(() => {
+    if (draggingRef.current === null) {
+      return;
+    }
+
+    history.current.push({
+      id: draggingRef.current.id,
+      pos: draggingRef.current.pos,
+    });
+
+    console.log(`position history: ${JSON.stringify(history.current)}`);
+
     draggingRef.current = null;
     drawImages();
   }, [drawImages]);
+
+  const handleUndo = () => {
+    if (history.current === undefined) {
+      return;
+    }
+
+    const currentHistoryIndex = historyIndex.current - 1;
+    historyIndex.current = currentHistoryIndex;
+
+    // const lastMove = history.current.pop();
+    const lastMove = history.current[history.current.length + currentHistoryIndex];
+
+    console.log(`after pop: ${JSON.stringify(history.current)}`);
+
+    if (lastMove === undefined) {
+      return;
+    }
+
+    const image = canvasImagesRef.current.find((i) => i.id === lastMove.id);
+    if (image === undefined) {
+      return;
+    }
+
+    history.current.push({
+      id: image.id,
+      pos: image.pos,
+    });
+
+    image.pos = lastMove.pos;
+    drawImages();
+  };
+
+  const handleRedo = () => {
+    if (history.current === undefined) {
+      return;
+    }
+
+    const currentHistoryIndex = historyIndex.current + 1;
+    historyIndex.current = currentHistoryIndex;
+
+    const lastMove = history.current[history.current.length - 1 + currentHistoryIndex];
+
+    if (lastMove === undefined) {
+      return;
+    }
+
+    const image = canvasImagesRef.current.find((i) => i.id === lastMove.id);
+    if (image === undefined) {
+      return;
+    }
+
+    image.pos = lastMove.pos;
+    drawImages();
+  }
 
   useEffect(() => {
     const init = async () => {
@@ -184,7 +253,7 @@ function useCanvasDrag(imageSources: ImageSource[]) {
     getCanvas,
   ]);
 
-  return canvasRef;
+  return { canvasRef, handleUndo, handleRedo };
 }
 
 export default useCanvasDrag;

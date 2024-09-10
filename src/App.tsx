@@ -7,9 +7,15 @@ function App() {
     { id: "frog", src: "./frog.svg" },
   ];
 
-  const canvasRef = useCanvasDrag(imageSources);
+  const { canvasRef, handleUndo, handleRedo } = useCanvasDrag(imageSources);
 
-  return <canvas ref={canvasRef} />;
+  return (
+    <>
+      <button onClick={handleUndo}>Undo</button>
+      <button onClick={handleRedo}>Redo</button>
+      <canvas ref={canvasRef} />
+    </>
+  );
 }
 
 export default App;

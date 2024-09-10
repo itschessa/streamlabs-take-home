@@ -10,8 +10,13 @@ interface CanvasImage {
   zIndex: number;
 }
 
+interface ImageHistory {
+  id: string;
+  pos: Position;
+}
+
 interface ImageSource {
   id: string;
   src: string;
 }
-export type { Position, CanvasImage, ImageSource };
+export type { Position, CanvasImage, ImageSource, ImageHistory };
